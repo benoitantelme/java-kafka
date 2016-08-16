@@ -2,12 +2,17 @@ package com.java.kafka.util;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.kafka.common.security.JaasUtils;
 import org.apache.log4j.Logger;
 
 import com.java.kafka.broker.SimpleBroker;
+
+import kafka.admin.TopicCommand;
+import kafka.utils.ZkUtils;
 
 public class KafkaUtils {
 	public static final String BROKER_PROPERTIES = "broker.properties";
@@ -51,4 +56,25 @@ public class KafkaUtils {
 
 		return broker;
 	}
+	
+	 public static void createTopic(String topicName, Integer numPartitions, String zookeeperAddress) {
+	        String[] arguments = new String[9];
+	        arguments[0] = "--create";
+	        arguments[1] = "--zookeeper";
+	        arguments[2] = zookeeperAddress;
+	        arguments[3] = "--replication-factor";
+	        arguments[4] = "1";
+	        arguments[5] = "--partitions";
+	        arguments[6] = "" + Integer.valueOf(numPartitions);
+	        arguments[7] = "--topic";
+	        arguments[8] = topicName;
+	        TopicCommand.TopicCommandOptions opts = new TopicCommand.TopicCommandOptions(arguments);
+
+	        ZkUtils zkUtils = ZkUtils.apply(opts.options().valueOf(opts.zkConnectOpt()),
+	                30000, 30000, JaasUtils.isZkSecurityEnabled());
+
+	        logger.info("CreateTopic " + Arrays.toString(arguments));
+	        TopicCommand.createTopic(zkUtils, opts);
+	    }
+
 }

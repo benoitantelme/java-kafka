@@ -2,9 +2,11 @@ package com.java.kafka.consumer;
 
 import static org.junit.Assert.*;
 
+import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -28,6 +30,10 @@ public class SimpleConsumerTest {
 		KafkaUtils.cleanKafkaHistory(kafkaProperties);
 
 		broker = KafkaUtils.startKafkaBroker(kafkaProperties, zookeeperProperties);
+		
+		int zookeeperPort = Integer.valueOf(zookeeperProperties.getProperty("client.port"));
+
+		KafkaUtils.createTopic("simpletopic", 1, "localhost:" + zookeeperPort);
 	}
 
 	@Test
