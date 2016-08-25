@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -12,8 +13,12 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 public class SimpleConsumer {
 	private KafkaConsumer<String, String> consumer;
 	private Map<String, String> history = new HashMap<>();
+	private CountDownLatch startLatch;
+	private CountDownLatch awaitLatch;
 
-	public SimpleConsumer(Properties properties) throws Exception {
+	public SimpleConsumer(Properties properties, CountDownLatch startLatch, CountDownLatch awaitLatch) throws Exception {
+		this.startLatch = startLatch;
+		this.awaitLatch = awaitLatch;
 		consumer = new KafkaConsumer<>(properties);
 
 		if (consumer == null)
@@ -26,6 +31,7 @@ public class SimpleConsumer {
 		Thread consumerThread = new Thread() {
 			public void run() {
 				try {
+					startLatch.countDown();
 					while (true) {
 						ConsumerRecords<String, String> records = consumer.poll(100);
 						if (records.count() != 0) {
@@ -35,6 +41,7 @@ public class SimpleConsumer {
 							for (ConsumerRecord<String, String> record : records) {
 								history.put(record.key() + count++, record.toString());
 							}
+							awaitLatch.countDown();
 						}
 					}
 				} finally {
