@@ -10,6 +10,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.java.kafka.broker.SimpleBroker;
+import com.java.kafka.data.City;
 import com.java.kafka.producer.SimpleProducer;
 import com.java.kafka.util.KafkaUtils;
 
@@ -52,9 +53,10 @@ public class SimpleConsumerTest {
 		
 		receiveLatch.await();
 
-		Map<String, String> summary = consumer.getSummary();
+		Map<String, City> summary = consumer.getSummary();
 		try {
 			assertEquals(10, summary.size());
+			consumer.printSummary();
 		} finally {
 			broker.stop();
 		}
