@@ -32,13 +32,15 @@ public class SimpleBroker {
 	}
 	
 	
-	public void stop(){
+	public void stop() throws InterruptedException{
 		logger.info("Stopping kafka...");
 		if(kafkaBroker  != null)
 			kafkaBroker.shutdown();
 		logger.info("Done");
 		
+		logger.info("Stopping Zookeeper...");
 		zookeeper.shutdown();
+		logger.info("Done");
 	}
 
 }

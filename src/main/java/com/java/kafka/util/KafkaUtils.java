@@ -1,11 +1,9 @@
 package com.java.kafka.util;
 
-import java.io.File;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Properties;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.kafka.common.security.JaasUtils;
 import org.apache.log4j.Logger;
 
@@ -19,7 +17,7 @@ public class KafkaUtils {
 	public static final String ZOOKEEPER_PROPERTIES = "zookeeper.properties";
 	public static final String PRODUCER_PROPERTIES = "producer.properties";
 	public static final String CONSUMER_PROPERTIES = "consumer.properties";
-	
+
 	private static Logger logger = Logger.getLogger("KafkaUtils");
 
 	public static Properties getProperties(String propertiesPath) throws Exception {
@@ -38,8 +36,7 @@ public class KafkaUtils {
 
 	public static void cleanKafkaHistory(Properties kafkaProperties) {
 		try {
-			String logs = kafkaProperties.getProperty("main.log.dirs");
-			FileUtils.cleanDirectory(new File(logs));
+			FilesUtil.cleanPath(returnMainLogPath(kafkaProperties));
 		} catch (Exception e) {
 			logger.error("Issue while cleaning kafka history", e);
 		}
@@ -56,25 +53,29 @@ public class KafkaUtils {
 
 		return broker;
 	}
-	
-	 public static void createTopic(String topicName, Integer numPartitions, String zookeeperAddress) {
-	        String[] arguments = new String[9];
-	        arguments[0] = "--create";
-	        arguments[1] = "--zookeeper";
-	        arguments[2] = zookeeperAddress;
-	        arguments[3] = "--replication-factor";
-	        arguments[4] = "1";
-	        arguments[5] = "--partitions";
-	        arguments[6] = "" + Integer.valueOf(numPartitions);
-	        arguments[7] = "--topic";
-	        arguments[8] = topicName;
-	        TopicCommand.TopicCommandOptions opts = new TopicCommand.TopicCommandOptions(arguments);
 
-	        ZkUtils zkUtils = ZkUtils.apply(opts.options().valueOf(opts.zkConnectOpt()),
-	                30000, 30000, JaasUtils.isZkSecurityEnabled());
+	public static void createTopic(String topicName, Integer numPartitions, String zookeeperAddress) {
+		String[] arguments = new String[9];
+		arguments[0] = "--create";
+		arguments[1] = "--zookeeper";
+		arguments[2] = zookeeperAddress;
+		arguments[3] = "--replication-factor";
+		arguments[4] = "1";
+		arguments[5] = "--partitions";
+		arguments[6] = "" + numPartitions;
+		arguments[7] = "--topic";
+		arguments[8] = topicName;
+		TopicCommand.TopicCommandOptions opts = new TopicCommand.TopicCommandOptions(arguments);
 
-	        logger.info("CreateTopic " + Arrays.toString(arguments));
-	        TopicCommand.createTopic(zkUtils, opts);
-	    }
+		ZkUtils zkUtils = ZkUtils.apply(opts.options().valueOf(opts.zkConnectOpt()), 30000, 30000,
+				JaasUtils.isZkSecurityEnabled());
+
+		logger.info("CreateTopic " + Arrays.toString(arguments));
+		TopicCommand.createTopic(zkUtils, opts);
+	}
+
+	public static String returnMainLogPath(Properties kafkaProperties) {
+		return kafkaProperties.getProperty("main.log.dirs");
+	}
 
 }

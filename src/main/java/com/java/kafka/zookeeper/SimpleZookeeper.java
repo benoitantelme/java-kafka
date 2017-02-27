@@ -11,6 +11,7 @@ import org.apache.zookeeper.server.ZooKeeperServer;
 
 public class SimpleZookeeper {
 	private ServerCnxnFactory factory;
+	private ZooKeeperServer zooKeeperServer;
 	private static Logger logger = Logger.getLogger("SimpleZookeeper");
 
 	public void startSimpleZookeeper(Properties properties) throws Exception {
@@ -19,7 +20,7 @@ public class SimpleZookeeper {
 		int tickTime = Integer.valueOf(properties.getProperty("tick.time"));
 
 		logger.info("Creating zookeeper");
-		ZooKeeperServer zooKeeperServer = new ZooKeeperServer(snapDirectory, logDirectory, tickTime);
+		zooKeeperServer = new ZooKeeperServer(snapDirectory, logDirectory, tickTime);
 
 		int clientPort = Integer.valueOf(properties.getProperty("client.port"));
 
@@ -29,11 +30,9 @@ public class SimpleZookeeper {
 		logger.info("Zookeeper started");
 	}
 
-	public void shutdown() {
-		logger.info("Stopping Zookeeper...");
-		if(factory != null)
+	public void shutdown() throws InterruptedException {
+			zooKeeperServer.shutdown();
 			factory.shutdown();
-		logger.info("Done");
 	}
 
 }
