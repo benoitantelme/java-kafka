@@ -15,13 +15,13 @@ import org.junit.Test;
 
 import com.java.kafka.broker.SimpleBroker;
 import com.java.kafka.data.City;
-import com.java.kafka.producer.SimpleProducer;
+import com.java.kafka.producer.TestProducer;
 import com.java.kafka.util.KafkaUtils;
 
-public class SimpleConsumerTest {
+public class SimpleExchangeTest {
 
 	private SimpleBroker broker;
-	private SimpleConsumer consumer;
+	private TestConsumer consumer;
 
 	private Properties kafkaProperties;
 
@@ -41,22 +41,20 @@ public class SimpleConsumerTest {
 	@Test
 	public void testSimpleRun() throws Exception {
 		final Properties consumerProperties = KafkaUtils.getProperties(KafkaUtils.CONSUMER_PROPERTIES);
-		CountDownLatch startLatch = new CountDownLatch(1);
 		CountDownLatch receiveLatch = new CountDownLatch(1);
-		consumer = new SimpleConsumer(consumerProperties, startLatch, receiveLatch);
+		consumer = new TestConsumer(consumerProperties, receiveLatch);
 		consumer.run();
 
-		startLatch.await();
 		Thread.sleep(4000);
 
 		final Properties producerProperties = KafkaUtils.getProperties(KafkaUtils.PRODUCER_PROPERTIES);
-		SimpleProducer producer = new SimpleProducer(producerProperties);
+		TestProducer producer = new TestProducer(producerProperties);
 		Thread.sleep(4000);
 
-		producer.simpleDelivery();
+		producer.delivery();
 		receiveLatch.await();
 
-		Map<String, City> summary = consumer.getSummary();
+		Map<City, Integer> summary = consumer.getSummary();
 		try {
 			assertEquals(10, summary.size());
 			consumer.printSummary();

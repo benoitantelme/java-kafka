@@ -1,11 +1,10 @@
 package com.java.kafka.consumer;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -15,23 +14,18 @@ import org.apache.kafka.common.errors.WakeupException;
 
 import com.java.kafka.data.City;
 
-public class SimpleConsumer {
-	private KafkaConsumer<String, String> consumer;
-	private Map<String, City> history = new HashMap<>();
-	private CountDownLatch startLatch;
-	private CountDownLatch awaitLatch;
-	private final AtomicBoolean closed = new AtomicBoolean(false);
+public class Consumer {
+	protected KafkaConsumer<String, String> consumer;
+	protected Map<City, Integer> history = new ConcurrentHashMap<>();
+	protected final AtomicBoolean closed = new AtomicBoolean(false);
 
-	public SimpleConsumer(Properties properties, CountDownLatch startLatch, CountDownLatch awaitLatch)
-			throws Exception {
-		this.startLatch = startLatch;
-		this.awaitLatch = awaitLatch;
+	public Consumer(Properties properties, String topicName) throws Exception {
 		consumer = new KafkaConsumer<>(properties);
 
 		if (consumer == null)
 			throw new Exception("Could not initialise consumer");
 
-		consumer.subscribe(Arrays.asList("simpletopic"));
+		consumer.subscribe(Arrays.asList(topicName));
 	}
 
 	public void close() {
@@ -43,16 +37,15 @@ public class SimpleConsumer {
 		Thread consumerThread = new Thread() {
 			public void run() {
 				try {
-					startLatch.countDown();
 					while (!closed.get()) {
 						ConsumerRecords<String, String> records = consumer.poll(100);
 						if (records.count() != 0) {
 							System.out.printf("Got %d records%n", records.count());
 
 							for (ConsumerRecord<String, String> record : records) {
-								history.put(record.key(), City.fromString(record.value()));
+								City city = City.fromString(record.value());
+								updateHistory(city);
 							}
-							awaitLatch.countDown();
 						}
 					}
 				} catch (WakeupException e) {
@@ -69,13 +62,22 @@ public class SimpleConsumer {
 		consumerThread.start();
 	}
 
-	protected Map<String, City> getSummary() {
+	protected Map<City, Integer> getSummary() {
 		return history;
 	}
 
+	protected void updateHistory(City city) {
+		Integer times = history.get(city);
+		
+		if (times == null)
+			times = new Integer(0);
+
+		history.put(city, times + 1);
+	}
+
 	protected void printSummary() {
-		for (Entry<String, City> entry : history.entrySet()) {
-			System.out.println("Entry with key " + entry.getKey() + " and with city " + entry.getValue().toString());
+		for (Entry<City, Integer> entry : history.entrySet()) {
+			System.out.println("City " + entry.getKey().toString() + " has appeared " + entry.getValue() + " times");
 		}
 	}
 
